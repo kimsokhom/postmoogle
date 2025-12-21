@@ -207,6 +207,10 @@ func (b *Bot) setRelay(ctx context.Context) {
 	}
 
 	value := b.parseCommand(evt.Content.AsMessage().Body, false)[1] // get original value, without forced lower case
+	if value == "reset" {
+		value = ""
+	}
+
 	cfg.Set(config.RoomRelay, value)
 	err = b.cfg.SetRoom(ctx, evt.RoomID, cfg)
 	if err != nil {
