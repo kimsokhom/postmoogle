@@ -91,6 +91,13 @@ func (b *Bot) onReaction(ctx context.Context, evt *event.Event) {
 // onBotJoin handles the "bot joined the room" event
 func (b *Bot) onBotJoin(ctx context.Context) {
 	evt := eventFromContext(ctx)
+
+	// do not send introduction/help messages to mailbox rooms where just a profile change occurred
+	cfg, err := b.cfg.GetRoom(ctx, evt.RoomID)
+	if err == nil && cfg.Mailbox() != "" {
+		return
+	}
+
 	// Workaround for membership=join events which are delivered to us twice,
 	// as described in this bug report: https://github.com/matrix-org/synapse/issues/9768
 	_, ok := b.handledMembershipEvents.LoadOrStore(evt.ID, true)

@@ -614,7 +614,9 @@ func (cli *Client) doRetry(
 	select {
 	case <-time.After(backoff):
 	case <-req.Context().Done():
-		return nil, nil, req.Context().Err()
+		if !errors.Is(context.Cause(req.Context()), ErrContextCancelRetry) {
+			return nil, nil, req.Context().Err()
+		}
 	}
 	if cli.UpdateRequestOnRetry != nil {
 		req = cli.UpdateRequestOnRetry(req, cause)
@@ -740,12 +742,15 @@ func (cli *Client) executeCompiledRequest(
 	cli.RequestStart(req)
 	startTime := time.Now()
 	res, err := client.Do(req)
-	duration := time.Now().Sub(startTime)
+	duration := time.Since(startTime)
 	if res != nil && !dontReadResponse {
 		defer res.Body.Close()
 	}
 	if err != nil {
-		if retries > 0 && !errors.Is(err, context.Canceled) {
+		// Either error is *not* canceled or the underlying cause of cancelation explicitly asks to retry
+		canRetry := !errors.Is(err, context.Canceled) ||
+			errors.Is(context.Cause(req.Context()), ErrContextCancelRetry)
+		if retries > 0 && canRetry {
 			return cli.doRetry(
 				req, err, retries, backoff, responseJSON, handler, dontReadResponse, sizeLimit, client,
 			)
@@ -857,7 +862,7 @@ func (cli *Client) FullSyncRequest(ctx context.Context, req ReqSync) (resp *Resp
 	}
 	start := time.Now()
 	_, err = cli.MakeFullRequest(ctx, fullReq)
-	duration := time.Now().Sub(start)
+	duration := time.Since(start)
 	timeout := time.Duration(req.Timeout) * time.Millisecond
 	buffer := 10 * time.Second
 	if req.Since == "" {
@@ -961,7 +966,7 @@ func (cli *Client) RegisterGuest(ctx context.Context, req *ReqRegister) (*RespRe
 //	}
 //	token := res.AccessToken
 func (cli *Client) RegisterDummy(ctx context.Context, req *ReqRegister) (*RespRegister, error) {
-	res, uia, err := cli.Register(ctx, req)
+	_, uia, err := cli.Register(ctx, req)
 	if err != nil && uia == nil {
 		return nil, err
 	} else if uia == nil {
@@ -970,7 +975,7 @@ func (cli *Client) RegisterDummy(ctx context.Context, req *ReqRegister) (*RespRe
 		return nil, errors.New("server does not support m.login.dummy")
 	}
 	req.Auth = BaseAuthData{Type: AuthTypeDummy, Session: uia.Session}
-	res, _, err = cli.Register(ctx, req)
+	res, _, err := cli.Register(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1746,6 +1751,8 @@ func parseRoomStateArray(req *http.Request, res *http.Response, responseJSON any
 	return nil, nil
 }
 
+type RoomStateMap = map[event.Type]map[string]*event.Event
+
 // State gets all state in a room.
 // See https://spec.matrix.org/v1.2/client-server-api/#get_matrixclientv3roomsroomidstate
 func (cli *Client) State(ctx context.Context, roomID id.RoomID) (stateMap RoomStateMap, err error) {
@@ -2014,8 +2021,16 @@ func (cli *Client) uploadMediaToURL(ctx context.Context, data ReqUploadMedia) (*
 				Msg("Error uploading media to external URL, not retrying")
 			return nil, err
 		}
-		cli.Log.Warn().Str("url", data.UnstableUploadURL).Err(err).
+		backoff := time.Second * time.Duration(cli.DefaultHTTPRetries-retries)
+		cli.Log.Warn().Err(err).
+			Str("url", data.UnstableUploadURL).
+			Int("retry_in_seconds", int(backoff.Seconds())).
 			Msg("Error uploading media to external URL, retrying")
+		select {
+		case <-time.After(backoff):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 		retries--
 		_, err = readerSeeker.Seek(0, io.SeekStart)
 		if err != nil {
