@@ -1,3 +1,37 @@
+# Build outputs
+# /postmoogle
 /cover.out
+/dist/
+
+# Environment and secrets
 /.env
+*.env
+.env.*
+
+# Database files
 /local.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test coverage
+*.out
+coverage.txt
+
+# Temporary files
+tmp/
+temp/
