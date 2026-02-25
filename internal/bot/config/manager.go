@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 
-	"github.com/kimsokhom/postmoogle/internal/config"
+	"github.com/etkecc/postmoogle/internal/config"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/rs/zerolog"
 	"maunium.net/go/mautrix/id"
