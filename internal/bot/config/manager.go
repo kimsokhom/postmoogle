@@ -19,7 +19,7 @@ type Manager struct {
 }
 
 // New config manager
-func New(lp *linkpearl.Linkpearl, log *zerolog.Logger, dkimPrivKey, dkimSignature string) *Manager {
+func New(lp *linkpearl.Linkpearl, log *zerolog.Logger, dkimPrivKey, dkimSignature string, cfg *config.Config) *Manager {
 	m := &Manager{
 		lp:            lp,
 		log:           log,
