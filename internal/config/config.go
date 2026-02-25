@@ -58,6 +58,11 @@ func New() *Config {
 			Username: env.String("relay.username", defaultConfig.Relay.Username),
 			Password: env.String("relay.password", defaultConfig.Relay.Password),
 		},
+		// (fork modify)
+		Defaults: Defaults{
+			Threadify: env.Bool("defaults.threadify", false),
+			NoThreads: env.Bool("defaults.nothreads", false),
+		},
 	}
 
 	return cfg

@@ -125,7 +125,8 @@ func initMatrix(cfg *config.Config) {
 		log.Fatal().Err(err).Msg("cannot initialize matrix bot")
 	}
 
-	mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature)
+	// mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature)
+	mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature, cfg)
 	q = queue.New(lp, mxc, &log)
 	mxb, err = bot.New(q, lp, &log, mxc, cfg.Proxies, cfg.Prefix, cfg.Domains, cfg.Admins, bot.MBXConfig(cfg.Mailboxes))
 	if err != nil {

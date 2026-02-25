@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 
+	"github.com/kimsokhom/postmoogle/internal/config"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/rs/zerolog"
 	"maunium.net/go/mautrix/id"
@@ -14,6 +15,7 @@ type Manager struct {
 	dkimSignature string
 	log           *zerolog.Logger
 	lp            *linkpearl.Linkpearl
+	cfg           *config.Config
 }
 
 // New config manager
@@ -23,6 +25,7 @@ func New(lp *linkpearl.Linkpearl, log *zerolog.Logger, dkimPrivKey, dkimSignatur
 		log:           log,
 		dkimPrivKey:   dkimPrivKey,
 		dkimSignature: dkimSignature,
+		cfg:           cfg,
 	}
 
 	return m
@@ -71,6 +74,25 @@ func (m *Manager) GetRoom(ctx context.Context, roomID id.RoomID) (Room, error) {
 	if config == nil {
 		config = make(Room, 0)
 	}
+
+	// --- FORK MODIFY HERE ---
+	// If the room doesn't have a value set, use the global default from Railway
+	if _, ok := config[RoomThreadify]; !ok {
+		if m.cfg.Defaults.Threadify {
+			config[RoomThreadify] = "true"
+		} else {
+			config[RoomThreadify] = "false"
+		}
+	}
+
+	if _, ok := config[RoomNoThreads]; !ok {
+		if m.cfg.Defaults.NoThreads {
+			config[RoomNoThreads] = "true"
+		} else {
+			config[RoomNoThreads] = "false"
+		}
+	}
+	// ---------------------------
 
 	return config, err
 }

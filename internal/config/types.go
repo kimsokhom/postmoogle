@@ -45,6 +45,9 @@ type Config struct {
 	Monitoring Monitoring
 
 	Relay Relay
+
+	// Defaults for new rooms (fork modify)
+	Defaults Defaults
 }
 
 // DKIM config
@@ -97,4 +100,10 @@ type Relay struct {
 	Port     string
 	Username string
 	Password string
+}
+
+// Defaults for new rooms (fork modify)
+type Defaults struct {
+	Threadify bool
+	NoThreads bool
 }
