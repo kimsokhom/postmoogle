@@ -60,8 +60,8 @@ func New() *Config {
 		},
 		// (fork modify)
 		Defaults: Defaults{
-			Threadify: env.Bool("defaults.threadify", false),
-			NoThreads: env.Bool("defaults.nothreads", false),
+			Threadify: env.Bool("defaults.threadify"),
+			NoThreads: env.Bool("defaults.nothreads"),
 		},
 	}
 
