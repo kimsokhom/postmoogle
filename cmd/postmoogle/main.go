@@ -59,6 +59,11 @@ func main() {
 
 	go startBot(cfg.StatusMsg)
 
+	// Start Widget API if enabled
+	if cfg.WidgetAPI.Enabled {
+		mxb.StartWidgetAPI(cfg.WidgetAPI)
+	}
+
 	if err := smtpm.Start(); err != nil {
 		//nolint:gocritic
 		log.Fatal().Err(err).Msg("SMTP server crashed")

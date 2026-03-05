@@ -63,6 +63,13 @@ func New() *Config {
 			Threadify: env.Bool("defaults.threadify"),
 			NoThreads: env.Bool("defaults.nothreads"),
 		},
+
+		// (fork modify) WidgetAPI config
+		WidgetAPI: WidgetAPI{
+			Enabled: env.Bool("widget.api.enabled"),
+			Port:    env.String("widget.api.port", "8080"),
+			Secret:  env.String("widget.api.secret"),
+		},
 	}
 
 	return cfg
