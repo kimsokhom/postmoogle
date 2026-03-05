@@ -3,6 +3,7 @@ package bot
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"github.com/etkecc/postmoogle/internal/config"
 )
 
@@ -15,6 +16,12 @@ type SendEmailRequest struct {
 func (b *Bot) StartWidgetAPI(cfg config.WidgetAPI) {
 	if !cfg.Enabled {
 		return
+	}
+
+	// Use Railway's provided PORT, fallback to your config port
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = cfg.Port
 	}
 
 	mux := http.NewServeMux()
@@ -52,6 +59,6 @@ func (b *Bot) StartWidgetAPI(cfg config.WidgetAPI) {
 		json.NewEncoder(w).Encode(map[string]string{"status": "queued"})
 	})
 
-	b.log.Info().Str("port", cfg.Port).Msg("Starting Widget REST API")
-	go http.ListenAndServe(":"+cfg.Port, mux)
+	b.log.Info().Str("port", port).Msg("Starting Widget REST API")
+	go http.ListenAndServe(":"+port, mux)
 }
