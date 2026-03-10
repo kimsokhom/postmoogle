@@ -420,8 +420,6 @@ func (b *Bot) handle(ctx context.Context) {
 	switch commandSlice[0] {
 	case commandHelp:
 		b.sendHelp(ctx)
-		// If the user is lost and types !pm help, restore the dashboard just in case
-		b.AutoAddWidget(ctx, evt.RoomID)
 	case commandStop:
 		b.runStop(ctx)
 	case commandSend:
@@ -460,17 +458,6 @@ func (b *Bot) handle(ctx context.Context) {
 		b.runBanlistReset(ctx)
 	case commandMailboxes:
 		b.sendMailboxes(ctx)
-
-	// --- ADD THIS SPECIFIC CASE HERE ---
-	case config.RoomMailbox:
-		// First, let the bot handle the standard mailbox logic (setting the email)
-		b.handleOption(ctx, commandSlice)
-		
-		// Then, trigger your new Auto-Add Sidebar logic
-		// 'evt' is already defined at the top of the handle function
-		b.AutoAddWidget(ctx, evt.RoomID)
-	// ------------------------------------
-
 	default:
 		b.handleOption(ctx, commandSlice)
 	}

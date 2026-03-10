@@ -64,13 +64,11 @@ func New() *Config {
 			NoThreads: env.Bool("defaults.nothreads"),
 		},
 
-		// WidgetAPI config (fork modify)
+		// (fork modify) WidgetAPI config
 		WidgetAPI: WidgetAPI{
 			Enabled: env.Bool("widget.api.enabled"),
 			Port:    env.String("widget.api.port", "8080"),
 			Secret:  env.String("widget.api.secret"),
-			WidgetURL: env.String("widget.url"), // POSTMOOGLE_WIDGET_URL
-    		IconURL:   env.String("widget.icon"), // POSTMOOGLE_WIDGET_ICON
 		},
 	}
 
