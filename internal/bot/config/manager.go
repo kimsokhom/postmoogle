@@ -3,7 +3,7 @@ package config
 import (
 	"context"
 
-	"github.com/etkecc/postmoogle/internal/config"
+	srvconfig "github.com/etkecc/postmoogle/internal/config"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/rs/zerolog"
 	"maunium.net/go/mautrix/id"
@@ -159,6 +159,6 @@ func (m *Manager) SetGreylist(ctx context.Context, cfg List) error {
 }
 
 // GetGlobalConfig allows the bot to see the Widget variables from Railway (fork modify)
-func (m *Manager) GetGlobalConfig() *config.Config {
+func (m *Manager) GetGlobalConfig() *srvconfig.Config {
 	return m.cfg
 }
