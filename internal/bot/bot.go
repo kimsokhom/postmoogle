@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"sync"
 
@@ -13,11 +14,12 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
+	// Only import the necessary internal packages
 	"github.com/etkecc/postmoogle/internal/bot/config"
 	"github.com/etkecc/postmoogle/internal/bot/queue"
 )
 
-// Mailboxes config
+// MBXConfig Mailboxes config
 type MBXConfig struct {
 	Reserved   []string
 	Forwarded  []string
@@ -32,12 +34,12 @@ type Bot struct {
 	allowedUsers            []*regexp.Regexp
 	allowedAdmins           []*regexp.Regexp
 	adminRooms              []id.RoomID
-	ignoreBefore            int64 // mautrix 0.15.x migration
+	ignoreBefore            int64
 	commands                commandList
 	rooms                   sync.Map
 	proxies                 []string
 	sendmail                func(string, string, string, *url.URL) error
-	cfg                     *config.Manager
+	cfg                     *botconfig.Manager // Use aliased type
 	log                     *zerolog.Logger
 	lp                      *linkpearl.Linkpearl
 	mu                      *kit.Mutex
@@ -50,7 +52,7 @@ func New(
 	q *queue.Queue,
 	lp *linkpearl.Linkpearl,
 	log *zerolog.Logger,
-	cfg *config.Manager,
+	cfg *botconfig.Manager, // Use aliased type
 	proxies []string,
 	prefix string,
 	domains []string,
@@ -99,7 +101,7 @@ func (b *Bot) Error(ctx context.Context, message string, args ...any) {
 		threadID = linkpearl.EventParent(evt.ID, evt.Content.AsMessage())
 	}
 
-	err := fmt.Errorf(message, args...) //nolint:goerr113 // we have to
+	err := fmt.Errorf(message, args...)
 	b.log.Error().Err(err).Msg(err.Error())
 	if evt == nil {
 		return
@@ -138,4 +140,57 @@ func (b *Bot) Start(statusMsg string) error {
 // Stop the bot
 func (b *Bot) Stop() {
 	b.lp.Stop(context.Background())
+}
+
+// --- FORK MODIFY: AUTO WIDGET PROVISIONING ---
+const PostmoogleWidgetID = "postmoogle_dashboard"
+
+// AutoAddWidget provisions the "Service Room" by force-opening the sidebar
+func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
+	// 1. Read Railway variables directly to avoid import errors
+	widgetURL := os.Getenv("POSTMOOGLE_WIDGET_URL")
+	iconURL := os.Getenv("POSTMOOGLE_WIDGET_ICON")
+
+	if widgetURL == "" {
+		b.log.Warn().Msg("Skipping AutoAddWidget: POSTMOOGLE_WIDGET_URL not set in Railway")
+		return
+	}
+
+	widgetID := "postmoogle_dashboard"
+
+	// 2. Define the Widget Metadata
+	widgetContent := map[string]interface{}{
+		"url":        widgetURL,
+		"name":       "Postmoogle Dashboard",
+		"type":       "m.custom",
+		"avatar_url": iconURL,
+		"data":       map[string]string{},
+	}
+
+	// 3. Define the Sidebar Layout (This is the "Auto-Open" magic)
+	layoutContent := map[string]interface{}{
+		"widgets": map[string]interface{}{
+			widgetID: map[string]interface{}{
+				"container": "right", // Pins it to the sidebar
+				"index":     0,
+				"width":     30,
+			},
+		},
+	}
+
+	// 4. Send the Definition Event
+	_, err := b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "m.widget", Class: event.StateClass}, widgetID, widgetContent)
+	if err != nil {
+		b.log.Error().Err(err).Msg("Failed to add widget definition")
+		return
+	}
+
+	// 5. Send the Layout Event (Tells Element to open it automatically)
+	_, err = b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout", Class: event.StateClass}, "", layoutContent)
+	
+	if err != nil {
+		b.log.Error().Err(err).Msg("Failed to set sidebar layout")
+	} else {
+		b.log.Info().Str("room_id", roomID.String()).Msg("Provisioned Service Room with Auto-Sidebar")
+	}
 }
