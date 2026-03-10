@@ -139,3 +139,53 @@ func (b *Bot) Start(statusMsg string) error {
 func (b *Bot) Stop() {
 	b.lp.Stop(context.Background())
 }
+
+// (fork modify)
+// Define a constant ID for consistency
+const PostmoogleWidgetID = "postmoogle_dashboard"
+
+// This function tells Matrix to add the widget automatically
+func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
+	globalCfg := b.cfg.GetGlobalConfig()
+	if globalCfg.WidgetAPI.WidgetURL == "" {
+		return
+	}
+
+	// 1. Define the Widget Content (m.widget)
+	widgetContent := map[string]interface{}{
+		"url":        globalCfg.WidgetAPI.WidgetURL,
+		"name":       "Postmoogle Dashboard",
+		"type":       "m.custom",
+		"avatar_url": globalCfg.WidgetAPI.IconURL,
+		"data":       map[string]string{},
+	}
+
+	// 2. Define the Layout Content (io.element.widgets.layout)
+	// This tells Element to open the widget in the sidebar ('right' container)
+	layoutContent := map[string]interface{}{
+		"widgets": map[string]interface{}{
+			PostmoogleWidgetID: map[string]interface{}{
+				"container": "right", // Puts it in the sidebar
+				"index":     0,       // Position 0
+				"width":     30,      // Suggests 30% width
+			},
+		},
+	}
+
+	// Send Event 1: The Widget Definition
+	_, err := b.lp.Client().SendStateEvent(ctx, roomID, event.StateWidget, PostmoogleWidgetID, widgetContent)
+	if err != nil {
+		b.log.Error().Err(err).Msg("Failed to add widget definition")
+		return
+	}
+
+	// Send Event 2: The Layout Instruction (The "Auto-Open" magic)
+	// Note: We use a custom event type string because 'io.element.widgets.layout' isn't always in standard libraries
+	_, err = b.lp.Client().SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout", Class: event.MessageClass}, "", layoutContent)
+	
+	if err != nil {
+		b.log.Error().Err(err).Msg("Failed to set widget layout")
+	} else {
+		b.log.Info().Str("room_id", roomID.String()).Msg("Provisioned Service Room with Auto-Sidebar")
+	}
+}

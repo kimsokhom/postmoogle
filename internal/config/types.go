@@ -49,15 +49,17 @@ type Config struct {
 	// Defaults for new rooms (fork modify)
 	Defaults Defaults
 
-	// WidgetAPI config
+	// WidgetAPI config (fork modify)
 	WidgetAPI WidgetAPI
 }
 
-// WidgetAPI config
+// WidgetAPI config (fork modify)
 type WidgetAPI struct {
     Enabled bool
     Port    string
     Secret  string
+	WidgetURL string // bot widget url (fork modify)
+    IconURL   string // bot widget icon url (fork modify)
 }
 
 // DKIM config
