@@ -148,6 +148,7 @@ const PostmoogleWidgetID = "postmoogle_dashboard"
 func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 	globalCfg := b.cfg.GetGlobalConfig()
 	if globalCfg.WidgetAPI.WidgetURL == "" {
+		b.log.Warn().Msg("Skipping AutoAddWidget: POSTMOOGLE_WIDGET_URL not set")
 		return
 	}
 
@@ -161,27 +162,25 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 	}
 
 	// 2. Define the Layout Content (io.element.widgets.layout)
-	// This tells Element to open the widget in the sidebar ('right' container)
 	layoutContent := map[string]interface{}{
 		"widgets": map[string]interface{}{
 			PostmoogleWidgetID: map[string]interface{}{
-				"container": "right", // Puts it in the sidebar
-				"index":     0,       // Position 0
-				"width":     30,      // Suggests 30% width
+				"container": "right",
+				"index":     0,
+				"width":     30,
 			},
 		},
 	}
 
-	// Send Event 1: The Widget Definition
-	_, err := b.lp.Client().SendStateEvent(ctx, roomID, event.StateWidget, PostmoogleWidgetID, widgetContent)
+	// Send Event 1: The Widget Definition using string "m.widget"
+	_, err := b.lp.MX.SendStateEvent(ctx, roomID, event.Type{Type: "m.widget"}, PostmoogleWidgetID, widgetContent)
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to add widget definition")
 		return
 	}
 
-	// Send Event 2: The Layout Instruction (The "Auto-Open" magic)
-	// Note: We use a custom event type string because 'io.element.widgets.layout' isn't always in standard libraries
-	_, err = b.lp.Client().SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout", Class: event.MessageClass}, "", layoutContent)
+	// Send Event 2: The Layout Instruction using string "io.element.widgets.layout"
+	_, err = b.lp.MX.SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout"}, "", layoutContent)
 	
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to set widget layout")

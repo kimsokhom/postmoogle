@@ -157,3 +157,8 @@ func (m *Manager) GetGreylist(ctx context.Context) List {
 func (m *Manager) SetGreylist(ctx context.Context, cfg List) error {
 	return m.lp.SetAccountData(ctx, acGreylistKey, cfg)
 }
+
+// GetGlobalConfig allows the bot to see the Widget variables from Railway (fork modify)
+func (m *Manager) GetGlobalConfig() *config.Config {
+	return m.cfg
+}
