@@ -420,8 +420,6 @@ func (b *Bot) handle(ctx context.Context) {
 	switch commandSlice[0] {
 	case commandHelp:
 		b.sendHelp(ctx)
-		// If the user is lost and types !pm help, restore the dashboard just in case
-		b.AutoAddWidget(ctx, evt.RoomID)
 	case commandStop:
 		b.runStop(ctx)
 	case commandSend:
@@ -460,14 +458,6 @@ func (b *Bot) handle(ctx context.Context) {
 		b.runBanlistReset(ctx)
 	case commandMailboxes:
 		b.sendMailboxes(ctx)
-
-	// --- ADD THIS SPECIFIC CASE HERE ---
-	case config.RoomMailbox:
-		b.handleOption(ctx, commandSlice)
-		// Trigger the Provisioner
-		b.AutoAddWidget(ctx, evt.RoomID)
-	// ------------------------------------
-
 	default:
 		b.handleOption(ctx, commandSlice)
 	}
