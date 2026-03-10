@@ -13,8 +13,9 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
-	"github.com/etkecc/postmoogle/internal/bot/config"
-	"github.com/etkecc/postmoogle/internal/bot/queue"
+	// ALIAS THESE TO PREVENT CONFLICTS
+	mxconfig "github.com/etkecc/postmoogle/internal/bot/config"
+	"github.com/etkecc/postmoogle/internal/config"
 )
 
 // Mailboxes config
@@ -146,13 +147,13 @@ const PostmoogleWidgetID = "postmoogle_dashboard"
 
 // This function tells Matrix to add the widget automatically
 func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
+	// 1. Correct way to call your new method
 	globalCfg := b.cfg.GetGlobalConfig()
 	if globalCfg.WidgetAPI.WidgetURL == "" {
 		b.log.Warn().Msg("Skipping AutoAddWidget: POSTMOOGLE_WIDGET_URL not set")
 		return
 	}
 
-	// 1. Define the Widget Content (m.widget)
 	widgetContent := map[string]interface{}{
 		"url":        globalCfg.WidgetAPI.WidgetURL,
 		"name":       "Postmoogle Dashboard",
@@ -161,7 +162,6 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 		"data":       map[string]string{},
 	}
 
-	// 2. Define the Layout Content (io.element.widgets.layout)
 	layoutContent := map[string]interface{}{
 		"widgets": map[string]interface{}{
 			PostmoogleWidgetID: map[string]interface{}{
@@ -172,15 +172,14 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 		},
 	}
 
-	// Send Event 1: The Widget Definition using string "m.widget"
-	_, err := b.lp.MX.SendStateEvent(ctx, roomID, event.Type{Type: "m.widget"}, PostmoogleWidgetID, widgetContent)
+	// 2. We use .MX() (method) and raw event types to be safe
+	_, err := b.lp.MX().SendStateEvent(ctx, roomID, event.Type{Type: "m.widget", Class: event.StateClass}, PostmoogleWidgetID, widgetContent)
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to add widget definition")
 		return
 	}
 
-	// Send Event 2: The Layout Instruction using string "io.element.widgets.layout"
-	_, err = b.lp.MX.SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout"}, "", layoutContent)
+	_, err = b.lp.MX().SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout", Class: event.StateClass}, "", layoutContent)
 	
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to set widget layout")
