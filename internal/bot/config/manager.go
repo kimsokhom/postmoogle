@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 
+	// ALIAS this to avoid shadowing the local 'config' package name
 	srvconfig "github.com/etkecc/postmoogle/internal/config"
 	"github.com/etkecc/go-linkpearl"
 	"github.com/rs/zerolog"
@@ -15,17 +16,17 @@ type Manager struct {
 	dkimSignature string
 	log           *zerolog.Logger
 	lp            *linkpearl.Linkpearl
-	cfg           *config.Config
+	cfg           *srvconfig.Config // Use aliased type
 }
 
 // New config manager
-func New(lp *linkpearl.Linkpearl, log *zerolog.Logger, dkimPrivKey, dkimSignature string, cfg *config.Config) *Manager {
+func New(lp *linkpearl.Linkpearl, log *zerolog.Logger, dkimPrivKey, dkimSignature string, cfg *srvconfig.Config) *Manager {
 	m := &Manager{
 		lp:            lp,
 		log:           log,
 		dkimPrivKey:   dkimPrivKey,
 		dkimSignature: dkimSignature,
-		cfg:           cfg,
+		cfg:           cfg, // Use aliased type
 	}
 
 	return m
@@ -75,8 +76,7 @@ func (m *Manager) GetRoom(ctx context.Context, roomID id.RoomID) (Room, error) {
 		config = make(Room, 0)
 	}
 
-	// --- FORK MODIFY HERE ---
-	// If the room doesn't have a value set, use the global default from Railway
+	// --- FORK MODIFY: GLOBAL DEFAULTS ---
 	if _, ok := config[RoomThreadify]; !ok {
 		if m.cfg.Defaults.Threadify {
 			config[RoomThreadify] = "true"
@@ -92,7 +92,6 @@ func (m *Manager) GetRoom(ctx context.Context, roomID id.RoomID) (Room, error) {
 			config[RoomNoThreads] = "false"
 		}
 	}
-	// ---------------------------
 
 	return config, err
 }
@@ -158,7 +157,7 @@ func (m *Manager) SetGreylist(ctx context.Context, cfg List) error {
 	return m.lp.SetAccountData(ctx, acGreylistKey, cfg)
 }
 
-// GetGlobalConfig allows the bot to see the Widget variables from Railway (fork modify)
+// GetGlobalConfig (fork modify)
 func (m *Manager) GetGlobalConfig() *srvconfig.Config {
 	return m.cfg
 }

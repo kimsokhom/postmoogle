@@ -13,13 +13,13 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
-	// ALIAS THESE TO PREVENT CONFLICTS
+	// USE ALIASED IMPORTS
 	botconfig "github.com/etkecc/postmoogle/internal/bot/config"
 	"github.com/etkecc/postmoogle/internal/bot/queue"
 	srvconfig "github.com/etkecc/postmoogle/internal/config"
 )
 
-// Mailboxes config
+// MBXConfig Mailboxes config
 type MBXConfig struct {
 	Reserved   []string
 	Forwarded  []string
@@ -39,7 +39,7 @@ type Bot struct {
 	rooms                   sync.Map
 	proxies                 []string
 	sendmail                func(string, string, string, *url.URL) error
-	cfg                     *botconfig.Manager
+	cfg                     *botconfig.Manager // Use aliased type
 	log                     *zerolog.Logger
 	lp                      *linkpearl.Linkpearl
 	mu                      *kit.Mutex
@@ -52,7 +52,7 @@ func New(
 	q *queue.Queue,
 	lp *linkpearl.Linkpearl,
 	log *zerolog.Logger,
-	cfg *botconfig.Manager,
+	cfg *botconfig.Manager, // Use aliased type
 	proxies []string,
 	prefix string,
 	domains []string,
@@ -142,10 +142,10 @@ func (b *Bot) Stop() {
 	b.lp.Stop(context.Background())
 }
 
-// PostmoogleWidgetID defines a constant ID for the widget registration
+// --- FORK MODIFY: AUTO WIDGET PROVISIONING ---
+
 const PostmoogleWidgetID = "postmoogle_dashboard"
 
-// AutoAddWidget configures the Matrix room to show your custom UI automatically
 func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 	globalCfg := b.cfg.GetGlobalConfig()
 	if globalCfg.WidgetAPI.WidgetURL == "" {
@@ -153,7 +153,6 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 		return
 	}
 
-	// 1. Setup Widget Metadata
 	widgetContent := map[string]interface{}{
 		"url":        globalCfg.WidgetAPI.WidgetURL,
 		"name":       "Postmoogle Dashboard",
@@ -162,7 +161,6 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 		"data":       map[string]string{},
 	}
 
-	// 2. Setup Sidebar Layout Metadata
 	layoutContent := map[string]interface{}{
 		"widgets": map[string]interface{}{
 			PostmoogleWidgetID: map[string]interface{}{
@@ -173,16 +171,15 @@ func (b *Bot) AutoAddWidget(ctx context.Context, roomID id.RoomID) {
 		},
 	}
 
-	// 3. Send Events using universal string types to avoid build errors
-	// Send Event 1: The Widget definition
-	_, err := b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "m.widget"}, PostmoogleWidgetID, widgetContent)
+	// Event 1: Definition
+	_, err := b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "m.widget", Class: event.StateClass}, PostmoogleWidgetID, widgetContent)
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to add widget definition")
 		return
 	}
 
-	// Send Event 2: The Element Layout instruction (Opens sidebar)
-	_, err = b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout"}, "", layoutContent)
+	// Event 2: Layout (Auto-opens Sidebar in Element)
+	_, err = b.lp.SendStateEvent(ctx, roomID, event.Type{Type: "io.element.widgets.layout", Class: event.StateClass}, "", layoutContent)
 	
 	if err != nil {
 		b.log.Error().Err(err).Msg("Failed to set widget layout")
