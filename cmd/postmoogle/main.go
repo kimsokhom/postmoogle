@@ -120,6 +120,7 @@ func initMatrix(cfg *config.Config) {
 		Homeserver:        cfg.Homeserver,
 		Login:             cfg.Login,
 		Password:          cfg.Password,
+		Token:             os.Getenv("POSTMOOGLE_TOKEN"),
 		SharedSecret:      cfg.SharedSecret,
 		DB:                db,
 		Dialect:           cfg.DB.Dialect,
