@@ -104,42 +104,6 @@ func initHealthchecks(cfg *config.Config) {
 	go hc.Auto(cfg.Monitoring.HealthchecksDuration)
 }
 
-// func initMatrix(cfg *config.Config) {
-// 	if cfg.DB.Dialect == "sqlite3" {
-// 		cfg.DB.Dialect = "sqlite"
-// 	}
-// 	db, err := sql.Open(cfg.DB.Dialect, cfg.DB.DSN)
-// 	if err != nil {
-// 		log.Fatal().Err(err).Msg("cannot initialize SQL database")
-// 	}
-// 	if cfg.DB.Dialect == "sqlite" {
-// 		db.SetMaxOpenConns(1)
-// 	}
-
-// 	lp, err := linkpearl.New(&linkpearl.Config{
-// 		Homeserver:        cfg.Homeserver,
-// 		Login:             cfg.Login,
-// 		Password:          cfg.Password,
-// 		Token:             os.Getenv("POSTMOOGLE_TOKEN"),
-// 		SharedSecret:      cfg.SharedSecret,
-// 		DB:                db,
-// 		Dialect:           cfg.DB.Dialect,
-// 		AccountDataSecret: cfg.DataSecret,
-// 		Logger:            log,
-// 	})
-// 	if err != nil {
-// 		log.Fatal().Err(err).Msg("cannot initialize matrix bot")
-// 	}
-
-// 	// mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature)
-// 	mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature, cfg)
-// 	q = queue.New(lp, mxc, &log)
-// 	mxb, err = bot.New(q, lp, &log, mxc, cfg.Proxies, cfg.Prefix, cfg.Domains, cfg.Admins, bot.MBXConfig(cfg.Mailboxes))
-// 	if err != nil {
-// 		log.Panic().Err(err).Msg("cannot start matrix bot")
-// 	}
-// 	log.Debug().Msg("bot has been created")
-// }
 func initMatrix(cfg *config.Config) {
 	if cfg.DB.Dialect == "sqlite3" {
 		cfg.DB.Dialect = "sqlite"
@@ -152,7 +116,6 @@ func initMatrix(cfg *config.Config) {
 		db.SetMaxOpenConns(1)
 	}
 
-	// 1. Initialize the bot with your existing config
 	lp, err := linkpearl.New(&linkpearl.Config{
 		Homeserver:        cfg.Homeserver,
 		Login:             cfg.Login,
@@ -167,12 +130,7 @@ func initMatrix(cfg *config.Config) {
 		log.Fatal().Err(err).Msg("cannot initialize matrix bot")
 	}
 
-	// 2. NEW LOGIC: Manually attach the Token to the Matrix handle
-	if token := os.Getenv("POSTMOOGLE_TOKEN"); token != "" {
-		lp.Handle().AccessToken = token
-		log.Info().Msg("Matrix bot session initialized using Access Token")
-	}
-
+	// mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature)
 	mxc = mxconfig.New(lp, &log, cfg.DKIM.PrivKey, cfg.DKIM.Signature, cfg)
 	q = queue.New(lp, mxc, &log)
 	mxb, err = bot.New(q, lp, &log, mxc, cfg.Proxies, cfg.Prefix, cfg.Domains, cfg.Admins, bot.MBXConfig(cfg.Mailboxes))
